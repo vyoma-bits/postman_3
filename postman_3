@@ -1,0 +1,87 @@
+import sys
+import os
+
+def reading(file1, file2):  # here i am reading the text from each file
+    with open(file1, 'r') as f:
+        seq1 = f.readline().strip()
+    with open(file2, 'r') as f:
+        seq2 = f.readline().strip()
+    return seq1, seq2
+
+def matrix(seq1, seq2, match=1, mismatch=-1, gap=-2):   # here i am generating 2d matrix and putting each column a value
+    rows = len(seq1) + 1
+    cols = len(seq2) + 1
+    score_matrix = [[0 for _ in range(cols)] for _ in range(rows)]
+
+    for i in range(1, rows):
+        score_matrix[i][0] = gap * i
+    for j in range(1, cols):
+        score_matrix[0][j] = gap * j
+
+    for i in range(1, rows):
+        for j in range(1, cols):
+            match_score = match if seq1[i-1] == seq2[j-1] else mismatch
+            score_matrix[i][j] = max(score_matrix[i-1][j-1] + match_score,
+                                      score_matrix[i-1][j] + gap,
+                                      score_matrix[i][j-1] + gap)
+    return score_matrix
+
+def callback(score_matrix, seq1, seq2):
+    i = len(seq1)
+    j = len(seq2)
+    align1 = ''
+    align2 = ''
+
+    while i > 0 and j > 0:
+        score = score_matrix[i][j]
+        diag_score = score_matrix[i-1][j-1]
+        left_score = score_matrix[i][j-1]
+        up_score = score_matrix[i-1][j]
+
+        if score == diag_score + 1:
+            align1 += seq1[i-1]
+            align2 += seq2[j-1]
+            i -= 1
+            j -= 1
+        elif score == left_score + 1:
+            align1 += '-'
+            align2 += seq2[j-1]
+            j -= 1
+        else:
+            align1 += seq1[i-1]
+            align2 += '-'
+            i -= 1
+
+    while i > 0:
+        align1 += seq1[i-1]
+        align2 += '-'
+        i -= 1
+
+    while j > 0:
+        align1 += '-'
+        align2 += seq2[j-1]
+        j -= 1
+
+    return align1[::-1], align2[::-1]
+
+def main():
+    if len(sys.argv) != 3:
+        print('Bye')
+        sys.exit(1)
+
+    file1 = sys.argv[1]
+    file2 = sys.argv[2]
+
+    if not os.path.isfile(file1) or not os.path.isfile(file2):
+        print('Wrong path')
+        sys.exit(1)
+
+    seq1, seq2 = reading(file1, file2)
+    score_matrix = matrix(seq1, seq2)
+    align1, align2 = callback(score_matrix, seq1, seq2)
+
+    print('Alignment 1:', align1)
+    print('Alignment 2:', align2)
+
+if __name__ == '__main__':
+    main()
